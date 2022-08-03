@@ -59,10 +59,12 @@ def launch_setup(context, *args, **kwargs):
     architecture_type       = LaunchConfiguration("architecture_type",       default="awf/universe")
     autoware_launch_file    = LaunchConfiguration("autoware_launch_file",    default=default_autoware_launch_file_of(architecture_type.perform(context)))
     autoware_launch_package = LaunchConfiguration("autoware_launch_package", default=default_autoware_launch_package_of(architecture_type.perform(context)))
+    evaluate_controller     = LaunchConfiguration("evaluate_controller",     default=False)
     global_frame_rate       = LaunchConfiguration("global_frame_rate",       default=30.0)
     global_real_time_factor = LaunchConfiguration("global_real_time_factor", default=1.0)
     global_timeout          = LaunchConfiguration("global_timeout",          default=180)
     initialize_duration     = LaunchConfiguration("initialize_duration",     default=30)
+    lateral_controller_mode = LaunchConfiguration("lateral_controller_mode", default="mpc_follower")
     launch_autoware         = LaunchConfiguration("launch_autoware",         default=True)
     launch_rviz             = LaunchConfiguration("launch_rviz",             default=False)
     output_directory        = LaunchConfiguration("output_directory",        default=Path("/tmp"))
@@ -79,10 +81,12 @@ def launch_setup(context, *args, **kwargs):
     print(f"architecture_type       := {architecture_type.perform(context)}")
     print(f"autoware_launch_file    := {autoware_launch_file.perform(context)}")
     print(f"autoware_launch_package := {autoware_launch_package.perform(context)}")
+    print(f"evaluate_controller     := {evaluate_controller.perform(context)}")
     print(f"global_frame_rate       := {global_frame_rate.perform(context)}")
     print(f"global_real_time_factor := {global_real_time_factor.perform(context)}")
     print(f"global_timeout          := {global_timeout.perform(context)}")
     print(f"initialize_duration     := {initialize_duration.perform(context)}")
+    print(f"lateral_controller_mode := {lateral_controller_mode.perform(context)}")
     print(f"launch_autoware         := {launch_autoware.perform(context)}")
     print(f"launch_rviz             := {launch_rviz.perform(context)}")
     print(f"output_directory        := {output_directory.perform(context)}")
@@ -100,7 +104,9 @@ def launch_setup(context, *args, **kwargs):
             {"architecture_type": architecture_type},
             {"autoware_launch_file": autoware_launch_file},
             {"autoware_launch_package": autoware_launch_package},
+            {"evaluate_controller": evaluate_controller},
             {"initialize_duration": initialize_duration},
+            {"lateral_controller_mode": lateral_controller_mode},
             {"launch_autoware": launch_autoware},
             {"port": port},
             {"record": record},
@@ -125,9 +131,11 @@ def launch_setup(context, *args, **kwargs):
         DeclareLaunchArgument("architecture_type",       default_value=architecture_type      ),
         DeclareLaunchArgument("autoware_launch_file",    default_value=autoware_launch_file   ),
         DeclareLaunchArgument("autoware_launch_package", default_value=autoware_launch_package),
+        DeclareLaunchArgument("evaluate_controller",     default_value=evaluate_controller      ),
         DeclareLaunchArgument("global_frame_rate",       default_value=global_frame_rate      ),
         DeclareLaunchArgument("global_real_time_factor", default_value=global_real_time_factor),
         DeclareLaunchArgument("global_timeout",          default_value=global_timeout         ),
+        DeclareLaunchArgument("lateral_controller_mode", default_value=lateral_controller_mode),
         DeclareLaunchArgument("launch_autoware",         default_value=launch_autoware        ),
         DeclareLaunchArgument("launch_rviz",             default_value=launch_rviz            ),
         DeclareLaunchArgument("output_directory",        default_value=output_directory       ),
@@ -144,7 +152,7 @@ def launch_setup(context, *args, **kwargs):
             namespace="simulation",
             name="scenario_test_runner",
             output="screen",
-            on_exit=Shutdown(),
+            # on_exit=Shutdown(),
             arguments=[
                 # fmt: off
                 "--global-frame-rate",       global_frame_rate,
@@ -191,6 +199,20 @@ def launch_setup(context, *args, **kwargs):
                 str(
                     Path(get_package_share_directory("traffic_simulator"))
                     / "config/scenario_simulator_v2.rviz"
+                ),
+            ],
+        ),
+        Node(
+            package="plotjuggler",
+            executable="plotjuggler",
+            name="plotjuggler",
+            output="screen",
+            condition=IfCondition(evaluate_controller),
+            arguments=[
+                "--layout",
+                str(
+                    Path(get_package_share_directory("control_performance_analysis"))
+                    / "config/controller_monitor.xml"
                 ),
             ],
         ),

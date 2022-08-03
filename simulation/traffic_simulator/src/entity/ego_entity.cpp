@@ -138,10 +138,12 @@ auto makeAutoware(const Configuration & configuration) -> std::unique_ptr<concea
                  getParameter<std::string>("autoware_launch_package"),
                  getParameter<std::string>("autoware_launch_file"),
                  "map_path:=" + configuration.map_path.string(),
+                 "evaluate_controller:=" + std::to_string(getParameter<bool>("evaluate_controller")),
                  "lanelet2_map_file:=" + configuration.getLanelet2MapFile(),
                  "pointcloud_map_file:=" + configuration.getPointCloudMapFile(),
                  "sensor_model:=" + getParameter<std::string>("sensor_model"),
                  "vehicle_model:=" + getParameter<std::string>("vehicle_model"),
+                 "lateral_controller_mode:=" + getParameter<std::string>("lateral_controller_mode"),
                  "rviz_config:=" + ((rviz_config == "")
                                       ? configuration.rviz_config_path.string()
                                       : Configuration::Pathname(rviz_config).string()),
